@@ -1,5 +1,9 @@
 <template>
   <div class="todo-container">
+    <div class="header-actions">
+      <span class="welcome-text">欢迎, {{ username }}</span>
+      <button @click="handleLogout" class="logout-btn">退出登录</button>
+    </div>
     <h2>待办事项列表</h2>
     <div class="todo-input">
       <input 
@@ -30,9 +34,9 @@
 
      <!-- 使用过滤后的列表 -->
     <ul class="todo-list">
-      <li v-for="(todo, index) in filteredTodos" :key="todo.id" :class="{ completed: todo.completed }">
-        <input type="checkbox" v-model="todo.completed">
-        <span>{{ todo.text }}</span>
+      <li v-for="(todo, index) in filteredTodos" :key="todo.id" :class="{ completed: todo.isCompleted }">
+        <input type="checkbox" :checked="todo.isCompleted" @change="toggleTodoStatus(todo)">
+        <span>{{ todo.title }}</span>
         <button @click="removeTodo(index)" class="delete-btn">删除</button>
       </li>
     </ul>
@@ -50,4 +54,29 @@ export default todoListScript;
 </script>
 
 <style src="../assets/styles/todolist.css"></style>
+<style scoped>
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+.welcome-text {
+  font-weight: bold;
+  color: #333;
+}
+.logout-btn {
+  padding: 5px 15px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.logout-btn:hover {
+  background-color: #ff7875;
+}
+</style>
 

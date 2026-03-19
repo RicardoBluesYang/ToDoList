@@ -239,3 +239,70 @@ h2::after {
   transform: translateY(0);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+/* =========================================
+   响应式设计 (适配移动端)
+========================================= */
+@media screen and (max-width: 600px) {
+  /* 调整主容器，去掉左右多余的边距 */
+  .todo-container {
+    padding: 15px;
+    margin: 10px;
+    width: auto;
+  }
+
+  /* 调整标题大小 */
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+
+  /* 输入框区域：按钮和输入框换行或者调整比例 */
+  .todo-input {
+    flex-direction: column; /* 手机上让按钮掉到输入框下面 */
+    box-shadow: none;
+  }
+
+  .todo-input input {
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .todo-input button {
+    border-radius: 8px;
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* 调整过滤器按钮，让它们挤一挤也能放下 */
+  .todo-filters {
+    padding: 5px;
+  }
+  
+  .todo-filters button {
+    padding: 6px 12px;
+    font-size: 14px;
+    margin: 0 4px;
+  }
+
+  /* 列表项的字号和间距 */
+  .todo-list li {
+    padding: 12px 8px;
+  }
+  
+  .todo-list li span {
+    font-size: 15px;
+  }
+
+  /* 底部统计栏调整 */
+  .todo-footer {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .todo-footer button {
+    width: 100%;
+    padding: 10px;
+  }
+}

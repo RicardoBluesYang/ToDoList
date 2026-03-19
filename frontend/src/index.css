@@ -68,3 +68,16 @@ h1::after {
   background: linear-gradient(to right, #4caf50, #8bc34a);
   border-radius: 2px;
 }
+
+/* 全局响应式 */
+@media screen and (max-width: 600px) {
+  #app {
+    margin-top: 20px;
+    padding: 0 10px;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+}
