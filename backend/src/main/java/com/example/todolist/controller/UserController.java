@@ -24,29 +24,40 @@ public class UserController {
         try {
             User user = userService.register(payload.get("username"), payload.get("password"));
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "注册成功");
+            response.put("message", "Register success");
             response.put("userId", user.getId());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(errorBody(e, "Register failed"));
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
         try {
-            System.out.println("Login attempt for username: " + payload.get("username"));
+            if (payload == null || payload.get("username") == null || payload.get("password") == null) {
+                return ResponseEntity.badRequest().body(errorBody(null, "Username or password cannot be empty"));
+            }
+
             String token = userService.login(payload.get("username"), payload.get("password"));
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
-            response.put("message", "登录成功");
+            response.put("message", "Login success");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            e.printStackTrace(); // 打印完整错误堆栈
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(401).body(errorBody(e, "Invalid username or password"));
         } catch (Exception e) {
-            e.printStackTrace(); // 打印其他未知错误
-            return ResponseEntity.status(500).body(Map.of("error", "服务器内部错误"));
+            return ResponseEntity.status(500).body(errorBody(e, "Internal server error"));
         }
+    }
+
+    private Map<String, String> errorBody(Throwable throwable, String fallbackMessage) {
+        String message = throwable == null ? null : throwable.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = fallbackMessage;
+        }
+        Map<String, String> body = new HashMap<>();
+        body.put("error", message);
+        return body;
     }
 }

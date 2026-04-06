@@ -3,16 +3,14 @@ package com.example.todolist.entity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
-public class TodoItem {
+public class TodoSubtask {
     private Long id;
-    private Long userId;
+    private Long todoId;
     private String title;
     private Boolean isCompleted;
-    private LocalDateTime dueDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<TodoSubtask> subtasks;
+
 }

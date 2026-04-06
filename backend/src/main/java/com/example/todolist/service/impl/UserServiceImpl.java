@@ -25,14 +25,21 @@ public class UserServiceImpl implements UserService {
         User newUser = new User();
         newUser.setUsername(username);
         newUser.setPassword(password); // TODO: 应该加密
-        
+
         userMapper.insert(newUser);
         return newUser;
     }
 
     @Override
     public String login(String username, String password) {
+        System.out.println("---- 进入 login 方法 ----");
+        System.out.println("接收到的 username: " + username);
+        System.out.println("当前 userMapper 是否为 null: " + (userMapper == null));
+
         User user = userMapper.findByUsername(username);
+
+        System.out.println("从数据库查出来的 user 是否为 null: " + (user == null));
+
         if (user == null || !user.getPassword().equals(password)) {
             throw new RuntimeException("用户名或密码错误");
         }

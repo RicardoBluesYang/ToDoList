@@ -1,83 +1,128 @@
-/* 移除与App.vue中样式冲突的部分 */
-/* 全局样式可以放在这里 */
+:root {
+  --font-sans: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
 
-* {
+  --bg-a: #e7f5ff;
+  --bg-b: #f4fcfb;
+  --bg-c: #d9f1ee;
+
+  --text-main: #17323b;
+  --text-secondary: #4e6972;
+  --text-muted: #718992;
+
+  --brand-1: #0f9d8a;
+  --brand-2: #0b7dba;
+  --brand-3: #4ec8ad;
+
+  --danger-1: #dc5a60;
+  --danger-2: #b94248;
+  --warn-bg: #fff4f4;
+  --warn-border: #f6c3c3;
+
+  --surface-glass: rgba(255, 255, 255, 0.76);
+  --surface-card: rgba(255, 255, 255, 0.9);
+  --surface-subtle: rgba(244, 251, 252, 0.92);
+
+  --border-soft: rgba(112, 173, 187, 0.28);
+  --shadow-soft: 0 18px 45px rgba(23, 81, 99, 0.15);
+  --shadow-focus: 0 0 0 4px rgba(26, 145, 163, 0.16);
+
+  --radius-xl: 24px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 9px;
+
+  --ease-main: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 0.22s;
+  --dur-mid: 0.32s;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-button {
-  outline: none;
-}
-
-input:focus {
-  outline: none;
-}
-
+html,
+body,
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  background-image:  url('./assets/background-checked.svg') ,url('./assets/background-waves.svg'), linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-  background-repeat: repeat, no-repeat, no-repeat;
-  background-position: center center, bottom center, center center;
-  background-size: auto, 100% auto, cover;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(131, 225, 205, 0.42), transparent 44%),
+    radial-gradient(circle at 86% 14%, rgba(132, 204, 246, 0.4), transparent 42%),
+    radial-gradient(circle at 84% 86%, rgba(126, 236, 214, 0.28), transparent 36%),
+    linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 52%, var(--bg-c) 100%);
   background-attachment: fixed;
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  position: relative;
-  overflow-x: hidden;
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-  padding: 0 20px;
+  width: min(1100px, calc(100% - 32px));
+  margin: 20px auto 26px;
+  animation: page-enter var(--dur-mid) var(--ease-main);
 }
 
-h1 {
-  color: #2c3e50;
-  font-size: 2.5rem;
-  margin-bottom: 30px;
-  font-weight: 700;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-  position: relative;
-  display: inline-block;
+h1,
+h2,
+h3,
+p {
+  margin: 0;
 }
 
-h1::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, #4caf50, #8bc34a);
-  border-radius: 2px;
+button,
+input,
+textarea {
+  font: inherit;
 }
 
-/* 全局响应式 */
-@media screen and (max-width: 600px) {
-  #app {
-    margin-top: 20px;
-    padding: 0 10px;
+input,
+textarea {
+  color: var(--text-main);
+}
+
+button {
+  border: 0;
+  transition:
+    transform var(--dur-fast) var(--ease-main),
+    box-shadow var(--dur-fast) var(--ease-main),
+    filter var(--dur-fast) var(--ease-main),
+    background-color var(--dur-fast) var(--ease-main);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+a {
+  color: var(--brand-2);
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
-  
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 20px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 820px) {
+  #app {
+    width: calc(100% - 20px);
+    margin-top: 12px;
   }
 }

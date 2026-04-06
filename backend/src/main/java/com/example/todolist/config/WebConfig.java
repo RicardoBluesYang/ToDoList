@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("*") // 允许所有来源 (开发环境方便调试)
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
@@ -24,9 +24,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 注册拦截器，拦截 /api/todos/**，放行 /api/users/** (登录注册)
         registry.addInterceptor(loginInterceptor)
-                .addPathPatterns("/api/todos/**")
+                .addPathPatterns("/api/todos/**", "/api/ai/**")
                 .excludePathPatterns("/api/users/login", "/api/users/register");
     }
 }
