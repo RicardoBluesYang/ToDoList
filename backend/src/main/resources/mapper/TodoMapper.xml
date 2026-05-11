@@ -7,13 +7,15 @@
         <result column="user_id" property="userId" jdbcType="BIGINT" />
         <result column="title" property="title" jdbcType="VARCHAR" />
         <result column="is_completed" property="isCompleted" jdbcType="BOOLEAN" />
+        <result column="priority" property="priority" jdbcType="TINYINT" />
+        <result column="notes" property="notes" jdbcType="VARCHAR" />
         <result column="due_date" property="dueDate" jdbcType="TIMESTAMP" />
         <result column="created_at" property="createdAt" jdbcType="TIMESTAMP" />
         <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, title, is_completed, due_date, created_at, updated_at
+        id, user_id, title, is_completed, priority, notes, due_date, created_at, updated_at
     </sql>
 
     <select id="findAllByUserId" resultMap="BaseResultMap">
@@ -30,8 +32,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO todo_item (user_id, title, is_completed, due_date, created_at, updated_at)
-        VALUES (#{userId}, #{title}, #{isCompleted}, #{dueDate}, NOW(), NOW())
+        INSERT INTO todo_item (user_id, title, is_completed, priority, notes, due_date, created_at, updated_at)
+        VALUES (#{userId}, #{title}, #{isCompleted}, #{priority}, #{notes}, #{dueDate}, NOW(), NOW())
     </insert>
 
     <update id="updatePartial">
@@ -40,6 +42,8 @@
             <if test="titleProvided">title = #{title},</if>
             <if test="dueDateProvided">due_date = #{dueDate},</if>
             <if test="isCompletedProvided">is_completed = #{isCompleted},</if>
+            <if test="priorityProvided">priority = #{priority},</if>
+            <if test="notesProvided">notes = #{notes},</if>
             updated_at = NOW()
         </set>
         WHERE id = #{id} AND user_id = #{userId}

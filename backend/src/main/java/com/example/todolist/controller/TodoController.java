@@ -35,7 +35,9 @@ public class TodoController {
         try {
             String title = getString(payload, "title");
             LocalDateTime dueDate = parseDueDate(payload, "dueDate");
-            TodoItem created = todoService.createTodo(getUserId(request), title, dueDate);
+            Integer priority = getInt(payload, "priority");
+            String notes = getString(payload, "notes");
+            TodoItem created = todoService.createTodo(getUserId(request), title, dueDate, priority, notes);
             return ResponseEntity.ok(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(errorBody(e.getMessage()));
@@ -52,10 +54,14 @@ public class TodoController {
             boolean titleProvided = payload.containsKey("title");
             boolean dueDateProvided = payload.containsKey("dueDate");
             boolean isCompletedProvided = payload.containsKey("isCompleted");
+            boolean priorityProvided = payload.containsKey("priority");
+            boolean notesProvided = payload.containsKey("notes");
 
             String title = titleProvided ? getString(payload, "title") : null;
             LocalDateTime dueDate = parseDueDate(payload, "dueDate");
             Boolean isCompleted = isCompletedProvided ? parseBoolean(payload.get("isCompleted"), "isCompleted") : null;
+            Integer priority = priorityProvided ? getInt(payload, "priority") : null;
+            String notes = notesProvided ? getString(payload, "notes") : null;
 
             TodoItem updated = todoService.updateTodo(
                     getUserId(request),
@@ -65,7 +71,11 @@ public class TodoController {
                     dueDate,
                     dueDateProvided,
                     isCompleted,
-                    isCompletedProvided
+                    isCompletedProvided,
+                    priority,
+                    priorityProvided,
+                    notes,
+                    notesProvided
             );
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
@@ -184,6 +194,27 @@ public class TodoController {
             throw new IllegalArgumentException(key + " must be a string");
         }
         return (String) value;
+    }
+
+    private Integer getInt(Map<String, Object> payload, String key) {
+        if (!payload.containsKey(key)) {
+            return null;
+        }
+        Object value = payload.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt(((String) value).trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(key + " must be an integer");
+            }
+        }
+        throw new IllegalArgumentException(key + " must be an integer");
     }
 
     private Boolean parseBoolean(Object value, String fieldName) {

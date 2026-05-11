@@ -6,6 +6,7 @@ import com.example.todolist.dto.AiDecomposeRequest;
 import com.example.todolist.dto.AiDecomposeResponse;
 import com.example.todolist.entity.TodoItem;
 import com.example.todolist.entity.TodoSubtask;
+import com.example.todolist.mapper.AiCallStatMapper;
 import com.example.todolist.service.AiDecomposeService;
 import com.example.todolist.service.TodoService;
 import com.example.todolist.service.impl.AiUpstreamException;
@@ -37,22 +38,32 @@ public class AiController {
     @Autowired
     private TodoService todoService;
 
+    @Autowired
+    private AiCallStatMapper aiCallStatMapper;
+
     @PostMapping("/decompose")
     public ResponseEntity<?> decompose(HttpServletRequest request, @RequestBody AiDecomposeRequest body) {
         try {
             requireUserId(request);
+            if (body == null) {
+                throw new IllegalArgumentException("Request body is required");
+            }
 
             String goalTitle = normalizeTitle(body.getGoalTitle(), "goalTitle");
             LocalDateTime dueDate = parseDueDate(body.getDueDate());
             AiDecomposeResponse result = aiDecomposeService.decompose(goalTitle, dueDate);
+            recordAiCall("SUCCESS");
             return ResponseEntity.ok(result);
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(errorBody("Unauthorized"));
         } catch (IllegalArgumentException e) {
+            recordAiCall("FAILED");
             return ResponseEntity.badRequest().body(errorBody(e.getMessage()));
         } catch (AiUpstreamException e) {
+            recordAiCall("FAILED");
             return ResponseEntity.status(502).body(errorBody(e.getMessage()));
         } catch (Exception e) {
+            recordAiCall("FAILED");
             return ResponseEntity.status(502).body(errorBody("Decompose failed, please retry"));
         }
     }
@@ -61,6 +72,9 @@ public class AiController {
     public ResponseEntity<?> commit(HttpServletRequest request, @RequestBody AiDecomposeCommitRequest body) {
         try {
             Long userId = requireUserId(request);
+            if (body == null) {
+                throw new IllegalArgumentException("Request body is required");
+            }
             String parentTitle = normalizeTitle(body.getParentTitle(), "parentTitle");
             LocalDateTime dueDate = parseDueDate(body.getDueDate());
             List<String> subtasks = normalizeSubtasks(body.getSubtasks());
@@ -150,5 +164,13 @@ public class AiController {
         Map<String, String> body = new HashMap<>();
         body.put("error", (message == null || message.trim().isEmpty()) ? "Request failed" : message);
         return body;
+    }
+
+    private void recordAiCall(String status) {
+        try {
+            aiCallStatMapper.insert(status);
+        } catch (Exception ignored) {
+            // Statistics must not block the AI user flow.
+        }
     }
 }

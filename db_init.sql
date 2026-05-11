@@ -6,6 +6,7 @@ USE `todolist_db`;
 
 DROP TABLE IF EXISTS `todo_subtask`;
 DROP TABLE IF EXISTS `todo_item`;
+DROP TABLE IF EXISTS `ai_call_stat`;
 DROP TABLE IF EXISTS `user`;
 
 CREATE TABLE `user` (
@@ -40,6 +41,15 @@ CREATE TABLE `todo_subtask` (
   PRIMARY KEY (`id`),
   KEY `idx_subtask_todo_id` (`todo_id`),
   CONSTRAINT `fk_subtask_todo` FOREIGN KEY (`todo_id`) REFERENCES `todo_item` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `ai_call_stat` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `status` varchar(20) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ai_call_stat_created_at` (`created_at`),
+  KEY `idx_ai_call_stat_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `user` (`username`, `password`, `created_at`)

@@ -23,7 +23,11 @@ public interface TodoMapper {
             @Param("dueDate") LocalDateTime dueDate,
             @Param("dueDateProvided") boolean dueDateProvided,
             @Param("isCompleted") Boolean isCompleted,
-            @Param("isCompletedProvided") boolean isCompletedProvided
+            @Param("isCompletedProvided") boolean isCompletedProvided,
+            @Param("priority") Integer priority,
+            @Param("priorityProvided") boolean priorityProvided,
+            @Param("notes") String notes,
+            @Param("notesProvided") boolean notesProvided
     );
 
     int deleteByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);

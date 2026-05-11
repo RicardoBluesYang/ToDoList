@@ -43,15 +43,22 @@ public class TodoServiceImpl implements TodoService {
 
     @Override
     public TodoItem createTodo(Long userId, String title) {
-        return createTodo(userId, title, null);
+        return createTodo(userId, title, null, null, null);
     }
 
     @Override
     public TodoItem createTodo(Long userId, String title, LocalDateTime dueDate) {
+        return createTodo(userId, title, dueDate, null, null);
+    }
+
+    @Override
+    public TodoItem createTodo(Long userId, String title, LocalDateTime dueDate, Integer priority, String notes) {
         TodoItem item = new TodoItem();
         item.setUserId(userId);
         item.setTitle(normalizeTitle(title));
         item.setIsCompleted(false);
+        item.setPriority(priority != null ? priority : 0);
+        item.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
         item.setDueDate(dueDate);
         todoMapper.insert(item);
         item.setSubtasks(new ArrayList<>());
@@ -67,15 +74,26 @@ public class TodoServiceImpl implements TodoService {
             LocalDateTime dueDate,
             boolean dueDateProvided,
             Boolean isCompleted,
-            boolean isCompletedProvided
+            boolean isCompletedProvided,
+            Integer priority,
+            boolean priorityProvided,
+            String notes,
+            boolean notesProvided
     ) {
-        if (!titleProvided && !dueDateProvided && !isCompletedProvided) {
+        if (!titleProvided && !dueDateProvided && !isCompletedProvided
+                && !priorityProvided && !notesProvided) {
             throw new IllegalArgumentException("No updatable fields provided");
         }
 
         String normalizedTitle = title;
         if (titleProvided) {
             normalizedTitle = normalizeTitle(title);
+        }
+
+        String normalizedNotes = notes;
+        if (notesProvided && notes != null) {
+            normalizedNotes = notes.trim();
+            if (normalizedNotes.isEmpty()) normalizedNotes = null;
         }
 
         int affectedRows = todoMapper.updatePartial(
@@ -86,7 +104,11 @@ public class TodoServiceImpl implements TodoService {
                 dueDate,
                 dueDateProvided,
                 isCompleted,
-                isCompletedProvided
+                isCompletedProvided,
+                priority,
+                priorityProvided,
+                normalizedNotes,
+                notesProvided
         );
         if (affectedRows == 0) {
             throw new RuntimeException("Todo not found");

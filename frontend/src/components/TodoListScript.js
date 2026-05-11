@@ -14,15 +14,19 @@ export default {
     return {
       newTodo: '',
       newTodoDueDate: '',
+      newTodoPriority: '',
       todos: [],
       filter: 'all',
       username: localStorage.getItem('username') || '用户',
       editingTodoId: null,
       editForm: {
         title: '',
-        dueDate: ''
+        dueDate: '',
+        priority: 0,
+        notes: ''
       },
       expandedSubtasks: {},
+      expandedNotes: {},
       newSubtaskMap: {},
       editingSubtask: {
         todoId: null,
@@ -37,13 +41,19 @@ export default {
       aiLoading: false,
       aiError: '',
       aiDraftParentTitle: '',
-      aiDraftSubtasks: []
+      aiDraftSubtasks: [],
+      dragItem: null,
+      dragTarget: { todoId: null, index: -1 },
+      touchDrag: null
     }
   },
   created() {
     this.fetchTodos()
   },
   computed: {
+    isAdmin() {
+      return this.username === 'admin'
+    },
     completedCount() {
       return this.todos.filter(todo => todo.isCompleted).length
     },
@@ -65,6 +75,10 @@ export default {
     }
   },
   methods: {
+    goAdmin() {
+      this.$router.push('/admin')
+    },
+
     handleLogout() {
       localStorage.removeItem('token')
       localStorage.removeItem('username')
@@ -83,8 +97,113 @@ export default {
     normalizeTodo(todo) {
       return {
         ...todo,
-        subtasks: Array.isArray(todo.subtasks) ? todo.subtasks : []
+        priority: todo.priority != null ? todo.priority : 0,
+        notes: todo.notes || '',
+        subtasks: this.applySubtaskOrder(todo.id, Array.isArray(todo.subtasks) ? todo.subtasks : [])
       }
+    },
+
+    applySubtaskOrder(todoId, subtasks) {
+      try {
+        const raw = localStorage.getItem(`subtask_order_${todoId}`)
+        if (!raw) return subtasks
+        const order = JSON.parse(raw)
+        if (!Array.isArray(order) || order.length !== subtasks.length) return subtasks
+        const map = new Map(subtasks.map(s => [s.id, s]))
+        const ordered = order.map(id => map.get(id)).filter(Boolean)
+        return ordered.length === subtasks.length ? ordered : subtasks
+      } catch {
+        return subtasks
+      }
+    },
+
+    saveSubtaskOrder(todoId, subtasks) {
+      const order = subtasks.map(s => s.id)
+      localStorage.setItem(`subtask_order_${todoId}`, JSON.stringify(order))
+    },
+
+    onDragStart(e, todoId, subtaskId, index) {
+      this.dragItem = { todoId, subtaskId, index }
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', String(subtaskId))
+      e.currentTarget.classList.add('dragging')
+    },
+
+    onDragOver(e, todoId, index) {
+      if (!this.dragItem || this.dragItem.todoId !== todoId) return
+      this.dragTarget = { todoId, index }
+    },
+
+    onDragEnd(e) {
+      e.currentTarget.classList.remove('dragging')
+      this.dragItem = null
+      this.dragTarget = { todoId: null, index: -1 }
+    },
+
+    onDrop(todoId, targetIndex) {
+      if (!this.dragItem || this.dragItem.todoId !== todoId) return
+      const fromIndex = this.dragItem.index
+      if (fromIndex === targetIndex) {
+        this.dragItem = null
+        this.dragTarget = { todoId: null, index: -1 }
+        return
+      }
+      const todo = this.findTodo(todoId)
+      if (!todo || !todo.subtasks) return
+      this.reorderSubtasks(todo, fromIndex, targetIndex)
+      this.dragItem = null
+      this.dragTarget = { todoId: null, index: -1 }
+    },
+
+    reorderSubtasks(todo, fromIndex, targetIndex) {
+      const items = [...todo.subtasks]
+      const [moved] = items.splice(fromIndex, 1)
+      items.splice(targetIndex, 0, moved)
+      todo.subtasks = items
+      this.saveSubtaskOrder(todo.id, items)
+    },
+
+    onTouchStart(e, todoId, subtaskId, index) {
+      const li = e.currentTarget.closest('li')
+      this.touchDrag = { todoId, subtaskId, fromIndex: index, targetIndex: index, el: li }
+      if (li) li.classList.add('touch-dragging')
+      e.preventDefault()
+    },
+
+    onTouchMove(e, todoId) {
+      if (!this.touchDrag || this.touchDrag.todoId !== todoId) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      let el = document.elementFromPoint(touch.clientX, touch.clientY)
+      while (el && el.tagName !== 'LI') {
+        el = el.parentElement
+      }
+      if (!el || !el.hasAttribute('data-subtask-index')) return
+      const targetIndex = parseInt(el.getAttribute('data-subtask-index'))
+      if (isNaN(targetIndex)) return
+      this.touchDrag.targetIndex = targetIndex
+      this.dragTarget = { todoId, index: targetIndex }
+    },
+
+    onTouchEnd(e, todoId) {
+      if (!this.touchDrag || this.touchDrag.todoId !== todoId) return
+      const { fromIndex, targetIndex, el } = this.touchDrag
+      if (el) el.classList.remove('touch-dragging')
+      this.touchDrag = null
+      this.dragTarget = { todoId: null, index: -1 }
+      if (fromIndex === targetIndex) return
+      const todo = this.findTodo(todoId)
+      if (!todo || !todo.subtasks) return
+      this.reorderSubtasks(todo, fromIndex, targetIndex)
+    },
+
+    subtaskProgress(todo) {
+      const subs = todo.subtasks
+      if (!subs || subs.length === 0) {
+        return todo.isCompleted ? 100 : 0
+      }
+      const done = subs.filter(s => s.isCompleted).length
+      return Math.round((done / subs.length) * 100)
     },
 
     async addTodo() {
@@ -92,10 +211,19 @@ export default {
       if (!title) return
 
       try {
-        const created = await todoApi.createTodo(title, this.newTodoDueDate || null)
-        this.todos.unshift(this.normalizeTodo(created))
+        const created = await todoApi.createTodo(
+          title,
+          this.newTodoDueDate || null,
+          this.newTodoPriority || 0,
+          null
+        )
+        const todo = this.normalizeTodo(created)
+        todo._justAdded = true
+        this.todos.unshift(todo)
         this.newTodo = ''
         this.newTodoDueDate = ''
+        this.newTodoPriority = ''
+        setTimeout(() => { todo._justAdded = false }, 500)
       } catch (error) {
         console.error('添加任务失败:', error)
         alert(error.response?.data?.error || '添加任务失败')
@@ -106,12 +234,16 @@ export default {
       this.editingTodoId = todo.id
       this.editForm.title = todo.title
       this.editForm.dueDate = this.toDateTimeInput(todo.dueDate)
+      this.editForm.priority = todo.priority != null ? todo.priority : 0
+      this.editForm.notes = todo.notes || ''
     },
 
     cancelEdit() {
       this.editingTodoId = null
       this.editForm.title = ''
       this.editForm.dueDate = ''
+      this.editForm.priority = 0
+      this.editForm.notes = ''
     },
 
     async saveEdit(todoId) {
@@ -124,7 +256,9 @@ export default {
       try {
         const updated = await todoApi.updateTodo(todoId, {
           title,
-          dueDate: this.editForm.dueDate || null
+          dueDate: this.editForm.dueDate || null,
+          priority: this.editForm.priority,
+          notes: this.editForm.notes || null
         })
         this.replaceTodo(updated)
         this.cancelEdit()
@@ -148,11 +282,52 @@ export default {
 
     async toggleTodoStatus(todo) {
       const nextStatus = !todo.isCompleted
-      todo.isCompleted = nextStatus
+
+      if (nextStatus) {
+        todo._animating = true
+        try {
+          await todoApi.updateTodo(todo.id, { isCompleted: true })
+        } catch (error) {
+          todo._animating = false
+          console.error('更新任务状态失败:', error)
+          alert(error.response?.data?.error || '更新任务状态失败')
+          return
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 560))
+        todo._animating = false
+
+        const el = this.$el.querySelector(`[data-todo-id="${todo.id}"]`)
+        const fromY = el ? el.getBoundingClientRect().top : 0
+
+        todo.isCompleted = true
+        await this.$nextTick()
+
+        if (el) {
+          const toY = el.getBoundingClientRect().top
+          const delta = fromY - toY
+          if (Math.abs(delta) > 2) {
+            el.style.transition = 'none'
+            el.style.transform = `translateY(${delta}px)`
+            el.getBoundingClientRect()
+            el.style.transition = 'transform 0.55s cubic-bezier(0.25, 0.1, 0.25, 1)'
+            el.style.transform = 'translateY(0)'
+            const onEnd = () => {
+              el.removeEventListener('transitionend', onEnd)
+              el.style.transition = ''
+              el.style.transform = ''
+            }
+            el.addEventListener('transitionend', onEnd)
+          }
+        }
+        return
+      }
+
+      todo.isCompleted = false
       try {
-        await todoApi.updateTodo(todo.id, { isCompleted: nextStatus })
+        await todoApi.updateTodo(todo.id, { isCompleted: false })
       } catch (error) {
-        todo.isCompleted = !nextStatus
+        todo.isCompleted = true
         console.error('更新任务状态失败:', error)
         alert(error.response?.data?.error || '更新任务状态失败')
       }
@@ -206,8 +381,58 @@ export default {
       this.expandedSubtasks[todoId] = !this.expandedSubtasks[todoId]
     },
 
+    toggleNotes(todoId) {
+      this.expandedNotes[todoId] = !this.expandedNotes[todoId]
+    },
+
     isSubtasksExpanded(todoId) {
       return !!this.expandedSubtasks[todoId]
+    },
+
+    onExpandBeforeEnter(el) {
+      el.style.height = '0'
+      el.style.opacity = '0'
+      el.style.overflow = 'hidden'
+      el.style.willChange = 'height'
+    },
+
+    onExpandEnter(el, done) {
+      const h = el.scrollHeight
+      el.getBoundingClientRect()
+      el.style.transition = 'height 0.30s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.25s ease'
+      el.style.height = h + 'px'
+      el.style.opacity = '1'
+      const cleanup = () => {
+        el.removeEventListener('transitionend', cleanup)
+        done()
+      }
+      el.addEventListener('transitionend', cleanup)
+    },
+
+    onExpandAfter(el) {
+      el.style.height = ''
+      el.style.overflow = ''
+      el.style.transition = ''
+      el.style.opacity = ''
+      el.style.willChange = ''
+    },
+
+    onExpandBeforeLeave(el) {
+      el.style.height = el.scrollHeight + 'px'
+      el.style.overflow = 'hidden'
+      el.style.willChange = 'height'
+      el.getBoundingClientRect()
+    },
+
+    onExpandLeave(el, done) {
+      el.style.transition = 'height 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.20s ease'
+      el.style.height = '0'
+      el.style.opacity = '0'
+      const cleanup = () => {
+        el.removeEventListener('transitionend', cleanup)
+        done()
+      }
+      el.addEventListener('transitionend', cleanup)
     },
 
     async addSubtask(todoId) {

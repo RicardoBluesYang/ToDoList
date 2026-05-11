@@ -11,6 +11,8 @@ public class TodoItem {
     private Long userId;
     private String title;
     private Boolean isCompleted;
+    private Integer priority;
+    private String notes;
     private LocalDateTime dueDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

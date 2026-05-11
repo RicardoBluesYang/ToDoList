@@ -37,8 +37,8 @@ export default {
     return api.get('/todos')
   },
 
-  createTodo(title, dueDate = null) {
-    return api.post('/todos', { title, dueDate })
+  createTodo(title, dueDate = null, priority = null, notes = null) {
+    return api.post('/todos', { title, dueDate, priority, notes })
   },
 
   updateTodo(id, payload) {
@@ -67,5 +67,21 @@ export default {
 
   aiCommit(parentTitle, dueDate, subtasks) {
     return api.post('/ai/decompose/commit', { parentTitle, dueDate, subtasks })
+  },
+
+  getAdminOverview() {
+    return api.get('/admin/overview')
+  },
+
+  getAdminUsers() {
+    return api.get('/admin/users')
+  },
+
+  deleteAdminUser(id) {
+    return api.delete(`/admin/users/${id}`)
+  },
+
+  getAdminAiStats() {
+    return api.get('/admin/ai-stats')
   }
 }

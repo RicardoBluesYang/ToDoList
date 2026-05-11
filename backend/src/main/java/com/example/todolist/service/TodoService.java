@@ -13,6 +13,8 @@ public interface TodoService {
 
     TodoItem createTodo(Long userId, String title, LocalDateTime dueDate);
 
+    TodoItem createTodo(Long userId, String title, LocalDateTime dueDate, Integer priority, String notes);
+
     TodoItem updateTodo(
             Long userId,
             Long id,
@@ -21,7 +23,11 @@ public interface TodoService {
             LocalDateTime dueDate,
             boolean dueDateProvided,
             Boolean isCompleted,
-            boolean isCompletedProvided
+            boolean isCompletedProvided,
+            Integer priority,
+            boolean priorityProvided,
+            String notes,
+            boolean notesProvided
     );
 
     void deleteTodo(Long userId, Long id);

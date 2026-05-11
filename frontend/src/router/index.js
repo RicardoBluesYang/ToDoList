@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ToDoList from '../components/ToDoList.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import Admin from '../views/Admin.vue'
 
 const routes = [
   {
@@ -23,6 +24,12 @@ const routes = [
     name: 'Tasks',
     component: ToDoList,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: Admin,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -36,6 +43,11 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
+    return
+  }
+
+  if (to.meta.requiresAdmin && localStorage.getItem('username') !== 'admin') {
+    next('/tasks')
     return
   }
 

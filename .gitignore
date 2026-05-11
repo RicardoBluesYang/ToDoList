@@ -11,3 +11,10 @@ backend/target/
 frontend/dist/
 .idea/
 *.log
+skills/
+ADMIN_MANUAL.md
+Docker_MySQL_使用说明.md
+frontend-copy - 副本
+.claude/
+thesis/
+mysql_data/
