@@ -1,0 +1,48 @@
+services:
+  # 数据库服务
+  db:
+    image: mysql:8.0
+    container_name: todolist_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=+08:00
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456 # 请在上线时修改此密码
+      MYSQL_DATABASE: todolist_db
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql # 数据持久化
+      - ./db_update_v2.sql:/docker-entrypoint-initdb.d/init.sql # 初始化脚本
+     
+
+  # 后端服务
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: todolist_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MYSQL_ROOT_PASSWORD=123456 # 必须与上面 db 的密码一致
+      - AI_BASE_URL=${AI_BASE_URL}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_MODEL=${AI_MODEL}
+      - AI_TIMEOUT_MS=${AI_TIMEOUT_MS:-30000}
+
+  # 前端服务 (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: todolist_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

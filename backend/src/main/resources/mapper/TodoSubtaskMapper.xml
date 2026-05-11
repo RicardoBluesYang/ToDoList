@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.todolist.mapper.TodoSubtaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.todolist.entity.TodoSubtask">
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="todo_id" property="todoId" jdbcType="BIGINT" />
+        <result column="title" property="title" jdbcType="VARCHAR" />
+        <result column="is_completed" property="isCompleted" jdbcType="BOOLEAN" />
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP" />
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, todo_id, title, is_completed, created_at, updated_at
+    </sql>
+
+    <select id="findAllByUserId" resultMap="BaseResultMap">
+        SELECT s.id, s.todo_id, s.title, s.is_completed, s.created_at, s.updated_at
+        FROM todo_subtask s
+        INNER JOIN todo_item t ON t.id = s.todo_id
+        WHERE t.user_id = #{userId}
+        ORDER BY s.created_at ASC
+    </select>
+
+    <select id="findAllByTodoId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM todo_subtask
+        WHERE todo_id = #{todoId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="findByIdAndTodoId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM todo_subtask
+        WHERE id = #{id} AND todo_id = #{todoId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO todo_subtask (todo_id, title, is_completed, created_at, updated_at)
+        VALUES (#{todoId}, #{title}, #{isCompleted}, NOW(), NOW())
+    </insert>
+
+    <update id="updatePartial">
+        UPDATE todo_subtask
+        <set>
+            <if test="titleProvided">title = #{title},</if>
+            <if test="isCompletedProvided">is_completed = #{isCompleted},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id} AND todo_id = #{todoId}
+    </update>
+
+    <delete id="deleteByIdAndTodoId">
+        DELETE FROM todo_subtask WHERE id = #{id} AND todo_id = #{todoId}
+    </delete>
+
+</mapper>

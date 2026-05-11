@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.todolist.mapper.AdminMapper">
+
+    <select id="getOverview" resultType="com.example.todolist.dto.AdminOverviewResponse">
+        SELECT
+            (SELECT COUNT(1) FROM `user`) AS total_users,
+            (SELECT COUNT(1) FROM `todo_item`) AS total_todos,
+            (SELECT COUNT(1) FROM `todo_item` WHERE is_completed = 1) AS completed_todos,
+            (SELECT COUNT(1) FROM `todo_item` WHERE is_completed = 0) AS active_todos,
+            (
+                SELECT COUNT(1)
+                FROM `todo_item`
+                WHERE is_completed = 0
+                  AND due_date IS NOT NULL
+                  AND due_date &lt; NOW()
+            ) AS overdue_todos,
+            (SELECT COUNT(1) FROM `todo_subtask`) AS total_subtasks,
+            CASE
+                WHEN (SELECT COUNT(1) FROM `todo_item`) = 0 THEN 0
+                ELSE ROUND(
+                    (SELECT COUNT(1) FROM `todo_item` WHERE is_completed = 1) * 100.0 /
+                    (SELECT COUNT(1) FROM `todo_item`),
+                    2
+                )
+            END AS completion_rate
+    </select>
+
+    <select id="listUsers" resultType="com.example.todolist.dto.AdminUserStatsResponse">
+        SELECT
+            u.id,
+            u.username,
+            u.created_at,
+            COUNT(DISTINCT t.id) AS todo_count,
+            COUNT(DISTINCT CASE WHEN t.is_completed = 1 THEN t.id END) AS completed_todo_count,
+            COUNT(DISTINCT CASE WHEN t.is_completed = 0 THEN t.id END) AS active_todo_count,
+            COUNT(DISTINCT CASE
+                WHEN t.is_completed = 0 AND t.due_date IS NOT NULL AND t.due_date &lt; NOW()
+                THEN t.id
+            END) AS overdue_todo_count,
+            COUNT(s.id) AS subtask_count
+        FROM `user` u
+        LEFT JOIN `todo_item` t ON t.user_id = u.id
+        LEFT JOIN `todo_subtask` s ON s.todo_id = t.id
+        GROUP BY u.id, u.username, u.created_at
+        ORDER BY u.created_at DESC
+    </select>
+
+    <select id="findUsernameById" resultType="java.lang.String">
+        SELECT username
+        FROM `user`
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteUserById">
+        DELETE FROM `user`
+        WHERE id = #{id}
+          AND username &lt;&gt; 'admin'
+    </delete>
+
+</mapper>
